@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Calculadora churrasco</title>
+  <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
+</head>
+
+<body>
+  <form class="form-churrasco">
+    <label for="npessoas">Número de Pessoas</label>
+    <input id="npessoas" name="npessoas" type="number" min="1">
+
+    <fieldset>
+      <legend>Cortes bovinos</legend>
+
+      <label class="carne-check" for="alcatra"><input type="checkbox" id="alcatra">Alcatra</label>
+      <label class="carne-check" for="contra"><input type="checkbox" id="contra">Contra filé</label>
+      <label class="carne-check" for="fraldinha"><input type="checkbox" id="fraldinha">Fraldinha</label>
+      <label class="carne-check" for="maminha"><input type="checkbox" id="maminha">Maminha</label>
+      <label class="carne-check" for="picanha"><input type="checkbox" id="picanha">Picanha</label>
+      <label class="carne-check" for="pernil"><input type="checkbox" id="pernil">Pernil de cordeiro</label>
+    </fieldset>
+
+    <h5>Resultado</h5>
+    <section class="resultado">
+      <table class="resultado-t">
+        <thead>
+          <tr>
+            <th>Carne</th>
+            <th>Qtde.</th>
+          </tr>
+        </thead>
+        <tbody class="resultado-t-body">
+        </tbody>
+      </table>
+    </section>
+  </form>
+
+  <script src="https://unpkg.com/@reactivex/rxjs/dist/global/rxjs.umd.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const Rx = rxjs;
+      const { map, startWith } = Rx.operators;
+
+      Rx.combineLatest([
+        Rx.fromEvent(document.querySelector('#npessoas'), 'input').pipe(map(it => it.target.value), startWith(0)),
+
+        ...Array.from(document.querySelectorAll('.carne-check')).map(input => Rx.fromEvent(input, 'input').pipe(
+          map(({ target }) => [target.checked, target.parentNode.textContent.trim()]),
+          startWith([false, '']),
+        )),
+
+      ]).subscribe(([nPessoas, ...carnes]) => {
+        const totalKg = nPessoas * .5;
+        const elsAt = carnes.filter(([at]) => at);
+        const dividido = totalKg / elsAt.length;
+
+        const tbody = document.querySelector('.resultado-t-body');
+        tbody.innerHTML = '';
+
+        if (elsAt.length < 1 || nPessoas < 1) {
+          tbody.innerHTML = '<tr><td colspan="2">-</td></tr>'
+          return;
+        }
+
+        const els = elsAt.map(([, name]) => {
+          const el = document.createElement('tr');
+          el.innerHTML = `<td>${name}</td><td>${dividido.toLocaleString(undefined, {
+            style: 'decimal',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })} Kg</td>`;
+          return el;
+        });
+
+        els.forEach(el => tbody.appendChild(el));
+      });
+    })();
+  </script>
+</body>
+
+</html>
